@@ -4,40 +4,37 @@
 
 ### Environment Setup
 
-**1. Install Redpanda Connect**
+The only prerequisite on the host is Docker (Engine 29 or higher). All tutorial tools (rpk, rpk connect, Docker CLI, curl) run inside a dev container.
+
+**1. Build and start the reviewer container**
 
 ```bash
-# macOS
-brew install redpanda-data/tap/redpanda
+git clone https://github.com/draftdev/test--how-to-use-tracer-components-in-redpanda.git
+cd test--how-to-use-tracer-components-in-redpanda
 
-# Linux
-rpk connect install
+docker build -t reviewer -f Dockerfile.reviewer .
+
+docker run -it --rm \
+  --network host \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v $(pwd):/workspace \
+  reviewer bash
 ```
 
-Verify the version:
-
-```bash
-rpk connect --version
-```
-
-Expected: 4.88.0 or later.
-
-**2. Install rpk CLI**
-
-Follow the instructions at https://docs.redpanda.com/current/get-started/rpk-install/
-
-**3. Verify Docker**
-
-```bash
-docker --version
-docker compose version
-```
-
-Expected: Docker Engine 29 or higher.
+You are now inside a clean environment with rpk, rpk connect, Docker CLI, and curl installed. All commands below run inside this container.
 
 ### Tutorial Walkthrough
 
-**1. Create workspace and base pipeline**
+**1. Verify tools**
+
+```bash
+rpk connect --version
+docker compose version
+```
+
+Expected: rpk connect 4.88.0 or later, Docker Compose v2.x.
+
+**2. Create workspace and base pipeline**
 
 ```bash
 mkdir -p ~/redpanda-tracer-tutorial && cd ~/redpanda-tracer-tutorial
@@ -51,16 +48,16 @@ rpk connect run 01-basic-pipeline.yaml
 
 Expected: 20 JSON objects printed to stdout, then process exits.
 
-**2. Start Jaeger**
+**3. Start Jaeger**
 
 ```bash
 curl -O https://raw.githubusercontent.com/draftdev/test--how-to-use-tracer-components-in-redpanda/main/docker/docker-compose.yml
-docker compose up jaeger
+docker compose up -d jaeger
 ```
 
 Expected: Jaeger UI available at http://localhost:16686
 
-**3. Run the Jaeger-traced pipeline**
+**4. Run the Jaeger-traced pipeline**
 
 Copy `01-basic-pipeline.yaml` to `02-jaeger-tracing.yaml`, add the `tracer` block from the article, and run it:
 
@@ -74,16 +71,16 @@ Expected:
 - Each trace has one root span and two child spans (`bloblang`, `log`)
 - Tags `pipeline: purchase-events` and `env: local` visible on spans
 
-**4. Start OTel Collector**
+**5. Start OTel Collector**
 
 ```bash
 curl -O https://raw.githubusercontent.com/draftdev/test--how-to-use-tracer-components-in-redpanda/main/docker/otel-collector-config.yaml
-docker compose up
+docker compose up -d
 ```
 
-Expected: Both Jaeger and OTel Collector start. OTel Collector listens on port 4317.
+Expected: Both Jaeger and OTel Collector running. OTel Collector listening on port 4317.
 
-**5. Run the OTel-traced pipeline**
+**6. Run the OTel-traced pipeline**
 
 Copy `01-basic-pipeline.yaml` to `03-otel-tracing.yaml`, add the `tracer` block from the article, and run it:
 
@@ -95,6 +92,13 @@ Expected:
 - 20 JSON objects printed to stdout
 - Traces visible at http://localhost:16686 under service name `purchase-pipeline`
 - Same span hierarchy as the Jaeger tracer run
+
+**7. Cleanup and exit**
+
+```bash
+docker compose down
+exit
+```
 
 ### Article Quality Checklist
 

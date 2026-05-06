@@ -16,11 +16,16 @@ RUN install -m 0755 -d /etc/apt/keyrings && \
     rm -rf /var/lib/apt/lists/*
 
 # rpk CLI (includes rpk connect)
-RUN curl -LO https://github.com/redpanda-data/redpanda/releases/latest/download/rpk-linux-amd64.zip && \
+RUN ARCH=$(dpkg --print-architecture) && \
+    if [ "$ARCH" = "arm64" ]; then RPK_ARCH="arm64"; else RPK_ARCH="amd64"; fi && \
+    curl -LO https://github.com/redpanda-data/redpanda/releases/latest/download/rpk-linux-${RPK_ARCH}.zip && \
     apt-get update && apt-get install -y unzip && \
-    unzip rpk-linux-amd64.zip -d /usr/local/bin && \
-    rm rpk-linux-amd64.zip && \
+    unzip rpk-linux-${RPK_ARCH}.zip -d /usr/local/bin && \
+    rm rpk-linux-${RPK_ARCH}.zip && \
     apt-get purge -y unzip && apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
+
+# Install rpk connect plugin
+RUN rpk connect install
 
 WORKDIR /workspace

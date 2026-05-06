@@ -23,8 +23,7 @@ tracer:
   open_telemetry_collector:
     service: purchase-pipeline
     grpc:
-      - url: localhost:4317
-        compression: gzip
+      - address: localhost:4317
     tags:
       env: local
     sampling:

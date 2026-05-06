@@ -8,8 +8,8 @@ processors:
   batch:
 
 exporters:
-  jaeger:
-    endpoint: jaeger:14250
+  otlp_grpc/jaeger:
+    endpoint: jaeger:4317
     tls:
       insecure: true
 
@@ -18,4 +18,4 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [jaeger]
+      exporters: [otlp_grpc/jaeger]
